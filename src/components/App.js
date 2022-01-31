@@ -11,9 +11,8 @@ import EditAvatarPopup from "./EditAvatarPopup";
 import AddPlacePopup from "./AddPlacePopup";
 import PopupWithSubmit from "./PopupWithSubmit";
 import Register from "./Register";
-import Logina from "./Logina";
-import InfoTooltipTrue from "./InfoTooltipTrue";
-import InfoTooltipFalse from "./InfoTooltipFalse";
+import Login from "./Login";
+import InfoTooltip from "./InfoTooltip";
 import ProtectedRoute from "./ProtectedRoute";
 import {auth} from "../utils/Auth";
 
@@ -22,14 +21,14 @@ function App() {
   const[isAddPlacePopupOpen, switchIsAddPlacePopupOpen] = React.useState(false);
   const[isEditAvatarPopupOpen, switchIsEditAvatarPopupOpen] = React.useState(false);
   const[isPopupWithSubmit, switchIsPopupWithSubmit] = React.useState(false);
-  const[isInfoTooltipFalseOpen, switchIsInfoTooltipFalseOpen] = React.useState(false);
-  const[isInfoTooltipTrueOpen, switchIsInfoTooltipTrueOpen] = React.useState(false);
+  const[isInfoTooltipPopupOpen, switchIsInfoTooltipPopupOpen] = React.useState(false);
 
   const[selectedCard, switchSelectCard] = React.useState({open: false, dataCard: {}});
   const[currentUser, setCurrentUser] = React.useState({});
   const[cards, setCards] = React.useState([]);
   const[dataCardDelete, setDataCardDelete] = React.useState('');
   const[userEmail, setUserEmail] = React.useState('');
+  const[verification, setVerification] = React.useState(false);
   const[loginVerification, setLoginVerification] = React.useState(false);
 
   const navigate = useNavigate();
@@ -102,14 +101,19 @@ function App() {
       password: password,
       email: email
     })
-      .then(() => {
-        navigate('/');
-        switchInfoTooltipTrue();
+      .then((res) => {
+        if(res.data._id) {
+          navigate('/sign-in');
+          setVerification(true);
+        } else {
+          setVerification(false);
+        }
       })
-      .catch((err) => {
-        switchInfoTooltipFalse();
-        console.log("ошибка регистрации пользователя: " + err);
-      });
+      .catch((err) =>
+        console.log("ошибка регистрации пользователя: " + err))
+      .finally(() => {
+        switchInfoTooltipPopup();
+      })
   }
 
   function handleLogin(password, email) {
@@ -121,27 +125,30 @@ function App() {
         if (data.token) {
           localStorage.setItem('jwt', data.token);
           setLoginVerification(true);
+        } else {
+          setVerification(false);
+          switchInfoTooltipPopup();
         }
       })
-      .catch((err) => {
-        switchInfoTooltipFalse();
-        console.log("ошибка авторизации пользователя: " + err);
-      });
+      .catch((err) =>
+        console.log("ошибка авторизации пользователя: " + err))
   }
 
   function handleChekToken() {
-    const jwt = localStorage.getItem('jwt');
+    let jwt = localStorage.getItem('jwt');
     if (jwt) {
       auth.chekToken()
         .then((res) => {
-          setLoginVerification(true)
-          setUserEmail(res.data.email);
+          if (res) {
+            setLoginVerification(true)
+            setUserEmail(res.data.email);
+          } else {
+            localStorage.removeItem('jwt');
+          }
         })
         .catch((err) => console.log("ошибка проверки токена: " + err))
     }
   }
-
-  console.log(userEmail)
 
   function switchProfilePopup () {
     switchIsEditProfilePopupOpen(true);
@@ -164,13 +171,8 @@ function App() {
     switchSelectCard({open: true, dataCard: data});
   }
 
-  //Переключение уведомлений
-  function switchInfoTooltipFalse() {
-    switchIsInfoTooltipFalseOpen(true);
-  }
-
-  function switchInfoTooltipTrue() {
-    switchIsInfoTooltipTrueOpen(true);
+  function switchInfoTooltipPopup() {
+    switchIsInfoTooltipPopupOpen(true);
   }
 
   const closePopup = () => {
@@ -178,8 +180,7 @@ function App() {
     switchIsAddPlacePopupOpen(false)
     switchIsEditAvatarPopupOpen(false)
     switchIsPopupWithSubmit(false)
-    switchIsInfoTooltipFalseOpen(false)
-    switchIsInfoTooltipTrueOpen(false)
+    switchIsInfoTooltipPopupOpen(false)
     switchSelectCard({open: false, dataCard: {}});
   }
 
@@ -203,8 +204,11 @@ function App() {
 
   return (
     <CurrentUserContext.Provider value={currentUser}>
-      <InfoTooltipFalse isOpen={isInfoTooltipFalseOpen} onClose={closePopup}/>
-      <InfoTooltipTrue isOpen={isInfoTooltipTrueOpen} onClose={closePopup} />
+      <InfoTooltip
+        verification={verification}
+        isOpen={isInfoTooltipPopupOpen}
+        onClose={closePopup}
+      />
       <Routes>
         <Route path="/sign-up" element={
           <>
@@ -215,13 +219,24 @@ function App() {
         <Route path="/sign-in" element={
           <>
             <Header title="Регистрация" link="/sign-up"/>
-            <Logina handleLogin={handleLogin}/>
+            <Login handleLogin={handleLogin} setUserEmail={setUserEmail}/>
           </>}
         />
         <Route path="/" element={
-          <ProtectedRoute loginVerification={loginVerification}>
             <div className="page">
-              <Header link="/sign-in" title="Выйти" userEmail={userEmail} logoutLogin={logoutLogin}/>
+              <ProtectedRoute loginVerification={loginVerification}>
+                <Header link="/sign-in" title="Выйти" userEmail={userEmail} logoutLogin={logoutLogin}/>
+                <Main
+                  handleEditProfileClick={switchProfilePopup}
+                  handleEditAvatarClick={switchAvatarPopup}
+                  handleAddPlaceClick={switchPlacePopup}
+                  handlePopupImage={switchImagePopup}
+                  handlePopupWithSubmit={switchPopupWithSubmit}
+                  cards={cards}
+                  onCardClick={handleCardLike}>
+                </Main>
+                <Footer/>
+              </ProtectedRoute>
               <EditProfilePopup
                 isOpen={isEditProfilePopupOpen}
                 onClose={closePopup}
@@ -251,18 +266,7 @@ function App() {
                 dataCard={dataCardDelete}
                 closePopupEsp={closePopupEsp}>
               </PopupWithSubmit>
-              <Main
-                handleEditProfileClick={switchProfilePopup}
-                handleEditAvatarClick={switchAvatarPopup}
-                handleAddPlaceClick={switchPlacePopup}
-                handlePopupImage={switchImagePopup}
-                handlePopupWithSubmit={switchPopupWithSubmit}
-                cards={cards}
-                onCardClick={handleCardLike}>
-              </Main>
-              <Footer/>
             </div>
-          </ProtectedRoute>
         }/>
       </Routes>
     </CurrentUserContext.Provider>
