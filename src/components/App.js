@@ -109,8 +109,9 @@ function App() {
           setVerification(false);
         }
       })
-      .catch((err) =>
-        console.log("ошибка регистрации пользователя: " + err))
+      .catch((err) => {
+        setVerification(false);
+        console.log("ошибка регистрации пользователя: " + err)})
       .finally(() => {
         switchInfoTooltipPopup();
       })
@@ -130,12 +131,14 @@ function App() {
           switchInfoTooltipPopup();
         }
       })
-      .catch((err) =>
-        console.log("ошибка авторизации пользователя: " + err))
+      .catch((err) => {
+        setVerification(false);
+        switchInfoTooltipPopup();
+        console.log("ошибка авторизации пользователя: " + err)})
   }
 
   function handleChekToken() {
-    let jwt = localStorage.getItem('jwt');
+    const jwt = localStorage.getItem('jwt');
     if (jwt) {
       auth.chekToken()
         .then((res) => {
