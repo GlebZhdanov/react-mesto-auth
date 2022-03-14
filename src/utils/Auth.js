@@ -40,7 +40,7 @@ export class Auth {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem('jwt')}`
+        "Authorization": localStorage.getItem('jwt'),
       },
     })
       .then(this._chekRes)
@@ -48,7 +48,7 @@ export class Auth {
 }
 
 const auth = new Auth({
-  url: 'https://auth.nomoreparties.co',
+  url: 'http://localhost:3001',
   headers: {
     "Content-Type": "application/json"
   }

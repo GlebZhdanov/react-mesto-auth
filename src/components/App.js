@@ -26,7 +26,7 @@ function App() {
   const[selectedCard, switchSelectCard] = React.useState({open: false, dataCard: {}});
   const[currentUser, setCurrentUser] = React.useState({});
   const[cards, setCards] = React.useState([]);
-  const[dataCardDelete, setDataCardDelete] = React.useState('');
+  const[dataCardDelete, setDataCardDelete] = React.useState({});
   const[userEmail, setUserEmail] = React.useState('');
   const[verification, setVerification] = React.useState(false);
   const[loginVerification, setLoginVerification] = React.useState(false);
@@ -36,39 +36,39 @@ function App() {
   React.useEffect(() => {
     if(loginVerification === true) {
       navigate('/');
-    }
-  },[loginVerification]);
-
-  React.useEffect(() => {
-    handleChekToken()  //
-  },[]);
-
-  React.useEffect(() => {
-    Promise.all([api.getUserInfo(), api.getAllCards()])
+      Promise.all([api.getUserInfo(), api.getAllCards()])
       .then(([dataInfoUser, dataInfoCard]) => {
         setCurrentUser(dataInfoUser);
         setCards(dataInfoCard);
       })
       .catch((err) => console.log("ошибка получения данных: " + err))
-  }, []);
+    }
 
+  }, [loginVerification]);
+
+  React.useEffect(() => {
+    handleChekToken()  //
+  },[]);
+
+  function handleCardLike(data) {
+    console.log(data)
+    const isLiked = data.likes.some(i => i === currentUser._id);
+    api.changeLikeCardStatus(data._id, isLiked)
+    .then((newCard) => {
+      setCards((state) =>
+        state.map((card) => (card._id === data._id ? newCard : card)));
+    })
+    .catch((err) => console.log("ошибка лайка: " + err))
+  }
+
+  console.log(currentUser)
   function handlePatchUserInfo(data) {
     api.patchUserInfo(data)
-      .then((newData) => {
-        setCurrentUser(newData)
+      .then((data) => {
+        setCurrentUser(data)
         closePopup()
       })
       .catch((err) => console.log("ошибка данных пользователя: " + err))
-  }
-
-  function handleCardLike(data) {
-    const isLiked = data.likes.some((i) => i._id === currentUser._id);
-    api.changeLikeCardStatus(data._id, !isLiked)
-      .then((newCard) => {
-        setCards((state) =>
-          state.map((card) => (card._id === data._id ? newCard : card)));
-      })
-      .catch((err) => console.log("ошибка лайка: " + err))
   }
 
   function handleCardDelete(id) {
@@ -101,13 +101,9 @@ function App() {
       password: password,
       email: email
     })
-      .then((res) => {
-        if(res.data._id) {
+      .then(() => {
           navigate('/sign-in');
           setVerification(true);
-        } else {
-          setVerification(false);
-        }
       })
       .catch((err) => {
         setVerification(false);
@@ -123,8 +119,8 @@ function App() {
       email: email
     })
       .then((data) => {
-        if (data.token) {
-          localStorage.setItem('jwt', data.token);
+        if (data.message) {
+          localStorage.setItem('jwt', data.message);
           setLoginVerification(true);
         } else {
           setVerification(false);
@@ -144,7 +140,7 @@ function App() {
         .then((res) => {
           if (res) {
             setLoginVerification(true)
-            setUserEmail(res.data.email);
+            setUserEmail(res.email);
           } else {
             localStorage.removeItem('jwt');
           }

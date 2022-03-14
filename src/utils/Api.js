@@ -4,19 +4,27 @@ export class Api {
     this._headers = config.headers;
   }
 
+  _getHeaders() {
+    const jwt = localStorage.getItem("jwt");
+    return {
+      "Authorization" : jwt,
+      'Content-Type' : 'application/json'
+    }
+  }
+
   changeLikeCardStatus(id, isLiked) {
     if(isLiked === true) {
-      return fetch(`${this._url}/cards/likes/${id}`, {
-        method: 'PUT',
-        headers: this._headers,
+      return fetch(`${this._url}/cards/${id}/likes`, {
+        method: 'DELETE',
+        headers: this._getHeaders()
       })
         .then((res) => {
           return this._chekRes(res)
         });
     } else {
-      return fetch(`${this._url}/cards/likes/${id}`, {
-        method: 'DELETE',
-        headers: this._headers,
+      return fetch(`${this._url}/cards/${id}/likes`, {
+        method: 'PUT',
+        headers: this._getHeaders()
       })
         .then((res) => {
           return this._chekRes(res)
@@ -32,30 +40,26 @@ export class Api {
   }
 
   getAllCards() {
-    return fetch(`${this._url}/cards`, {
-      method: "GET",
-      headers: this._headers
-    })
-    .then(res => {
-      return this._chekRes(res)
-    })
+   return fetch(`${this._url}/cards`, {
+    method: "GET",
+    headers: this._getHeaders()
+  })
+    .then(this._chekRes)
   }
 
   getUserInfo() {
     return fetch(`${this._url}/users/me`, {
       method: "GET",
-      headers: this._headers
+      headers: this._getHeaders()
     })
-      .then((res) => {
-        return this._chekRes(res)
-      })
+      .then(this._chekRes)
   }
 
   patchUserInfo(data) {
     return fetch(`${this._url}/users/me`, {
       method: 'PATCH',
-      headers: this._headers,
-      body: JSON.stringify(data)
+      headers: this._getHeaders(),
+      body: JSON.stringify(data),
     })
       .then((res) => {
         return this._chekRes(res)
@@ -65,8 +69,10 @@ export class Api {
   uploadAvatar(data) {
     return fetch(`${this._url}/users/me/avatar`, {
       method: 'PATCH',
-      headers: this._headers,
-      body: JSON.stringify(data)
+      headers: this._getHeaders(),
+      body: JSON.stringify({
+        avatar: data.avatar
+      })
     })
       .then((res) => {
         return this._chekRes(res)
@@ -76,7 +82,7 @@ export class Api {
   postNewCard(data) {
     return fetch(`${this._url}/cards`, {
       method: 'POST',
-      headers: this._headers,
+      headers: this._getHeaders(),
       body: JSON.stringify(data)
     })
       .then((res) => {
@@ -87,7 +93,7 @@ export class Api {
   deleteCard(id) {
     return fetch(`${this._url}/cards/${id}`, {
       method: 'DELETE',
-      headers: this._headers
+      headers: this._getHeaders()
     })
       .then((res) => {
         return this._chekRes(res)
@@ -96,11 +102,7 @@ export class Api {
   }
 
   const api = new Api({
-    url: 'https://mesto.nomoreparties.co/v1/cohort-30',
-    headers: {
-      authorization: 'b725fbaf-4205-4fab-8325-c71ecb1c6595',
-      'Content-Type' : 'application/json'
-    }
+    url: "http://localhost:3001",
   })
 
   export {api}
