@@ -13,9 +13,6 @@
 
 - HTML, CSS
 - Javascript
-- Работа с формами
-- Валидация форм
-- Методология БЭМ
 - React
 - WebPack
 
